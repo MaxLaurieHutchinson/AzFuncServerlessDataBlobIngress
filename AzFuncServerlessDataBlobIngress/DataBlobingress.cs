@@ -21,6 +21,10 @@ namespace AzFuncServerlessDataBlobIngress
 {
     public static class DataBlobingress
     {
+
+        private const string ContainerName = "DataIngressUpload";
+        private const string FileName = "FileName";
+
         [FunctionName("DataBlobingress")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
@@ -45,11 +49,9 @@ namespace AzFuncServerlessDataBlobIngress
                 log.LogError("Function was cancelled.");
             }
 
-
             // Define Blob Location 
 
             var BlobPath = GetBlobPath();
-
 
             // Upload to blob with stream 
 
@@ -66,14 +68,19 @@ namespace AzFuncServerlessDataBlobIngress
         }
 
 
-
         #region helpers
 
         private static string GetBlobPath()
         {
-            var output = "lcoation123";
-        }
+            // ISO8601 date formatting
 
+            var ingressDate = DateTime.UtcNow;
+            var folderPath = $"{ContainerName}/{ingressDate:yyyy-MM-dd}".ToLower();
+            var DynamicFileName = $"{FileName}_{ingressDate:yyyy-MM-ddTHH:mm:ss.fff}.json".ToLower();
+            var Output = $"{folderPath}/{DynamicFileName}";
+
+            return Output;
+        }
 
         #endregion helpers
 
