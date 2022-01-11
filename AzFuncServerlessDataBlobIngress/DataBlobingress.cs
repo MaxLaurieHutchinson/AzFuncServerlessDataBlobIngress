@@ -25,7 +25,9 @@ namespace AzFuncServerlessDataBlobIngress
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)]
             HttpRequest request,
+            // // Dynamic output bindings for Blob folder
             Binder binder,
+            CancellationToken token,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
@@ -38,12 +40,48 @@ namespace AzFuncServerlessDataBlobIngress
                 return new BadRequestResult();
             }
 
+            if (token.IsCancellationRequested)
+            {
+                log.LogError("Function was cancelled.");
+            }
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+
+            // Define Blob Location 
+
+            var BlobPath = GetBlobPath();
+
+
+            // Upload to blob with stream 
+
+            using (var output = await binder.BindAsync<Stream>(new BlobAttribute(BlobPath, FileAccess.Write), token))
+            {
+                await request.Body.CopyToAsync(output, token);
+            };
+
+            string responseMessage = string.IsNullOrEmpty(BlobPath)
+                ? "This HTTP triggered function executed successfully. "
+                : $" Location: {BlobPath}. This HTTP triggered function executed successfully.";
 
             return new OkObjectResult(responseMessage);
         }
+
+
+
+        #region helpers
+
+        private static string GetBlobPath()
+        {
+            var output = "lcoation123";
+        }
+
+
+        #endregion helpers
+
+
+
+
+
+
+
     }
 }
